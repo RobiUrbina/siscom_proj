@@ -1,16 +1,13 @@
 const int manchesterPin = 9;
-const int syncPin = 8;
-const unsigned long bitRate = 1;                  // bits por segundo
-const unsigned long bitPeriod = 1000000 / bitRate; // 500000 µs (0.5 s por bit)
+const unsigned long bitRate = 1000000;
+const unsigned long bitPeriod = 500000;
 const unsigned long halfPeriod = bitPeriod / 2;    // 250000 µs (0.25 s por medio bit)
 
 void setup() {
   pinMode(manchesterPin, OUTPUT);
-  pinMode(syncPin, OUTPUT);
   digitalWrite(manchesterPin, LOW);
-  digitalWrite(syncPin, LOW);
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("=== Generador Manchester 2 bit/s (con bit de sincronización) ===");
   Serial.println("Escribe un texto y presiona Enter para transmitirlo.\n");
 }
@@ -25,11 +22,6 @@ void loop() {
       Serial.println(msg);
       Serial.println("Binario transmitido:");
 
-      // Pulso de sincronización general (inicio)
-      digitalWrite(syncPin, HIGH);
-      delay(100); // 100 ms para indicar inicio
-      digitalWrite(syncPin, LOW);
-
       // === Nuevo: Bit de sincronización previo ===
       Serial.println("Enviando bit de sincronización (1)...");
       sendManchesterBit(1);  // Puede ser 1 o 0 según convenga para tu decodificador
@@ -37,21 +29,9 @@ void loop() {
       // === Enviar mensaje ===
       for (unsigned int i = 0; i < msg.length(); i++) {
         byte c = msg[i];
-
-        // Mostrar byte en binario
-        for (int b = 7; b >= 0; b--) {
-          Serial.print(bitRead(c, b));
-        }
-        Serial.print(" ");
-
         // Transmitir el byte en Manchester
         sendManchesterByte(c);
       }
-
-      // Pulso de sincronización final
-      digitalWrite(syncPin, HIGH);
-      delay(100); // 100 ms para indicar fin
-      digitalWrite(syncPin, LOW);
 
       Serial.println("\nTransmisión completada.\n");
     }
