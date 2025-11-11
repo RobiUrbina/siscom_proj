@@ -1,0 +1,59 @@
+// va de la mano con el main_4char y deco_4char.py
+// === Transmisor binario sincronizado (versión lenta) ===
+// Autor: Roberto Urbina
+// Bitrate: 250 bps (4000 µs por bit)
+// Formato: [0xAA][LEN][DATOS ASCII]
+
+const int dataPin = 8;                 // Pin de salida
+const unsigned long BIT_DELAY = 4000;  // µs por bit (250 bps)
+
+void setup() {
+  pinMode(dataPin, OUTPUT);
+  digitalWrite(dataPin, LOW);
+
+  Serial.begin(9600);
+  Serial.println("=== Transmisor binario 250 bps ===");
+  Serial.println("Escribe un mensaje y presiona Enter.\n");
+}
+
+void sendBit(bool bitVal) {
+  digitalWrite(dataPin, bitVal ? HIGH : LOW);
+  delayMicroseconds(BIT_DELAY);
+}
+
+void sendByte(byte b) {
+  for (int i = 7; i >= 0; i--) {
+    sendBit((b >> i) & 1);
+  }
+}
+
+void sendSync() {
+  sendByte(0xAA);
+  delayMicroseconds(BIT_DELAY * 2);
+}
+
+void sendLength(byte len) {
+  sendByte(len);
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    String msg = Serial.readStringUntil('\n');
+    msg.trim();
+    if (msg.length() == 0) return;
+
+    Serial.print("Transmitiendo: ");
+    Serial.println(msg);
+
+    sendSync();
+    sendLength(msg.length());
+
+    for (int i = 0; i < msg.length(); i++) {
+      sendByte(msg[i]);
+    }
+
+    digitalWrite(dataPin, LOW);
+    Serial.println("✅ Trama enviada.\n");
+    delay(1000);
+  }
+}
