@@ -1,0 +1,24 @@
+%%codigo de PSoC que va de la mano con deco_4char.py
+%%conecta el PSoC a usb uart, haciendo posbible que los 0s y 1s recibidos sean leidos en python
+#include "project.h"
+#include "stdio.h"
+
+int main(void)
+{
+    CyGlobalIntEnable;
+
+    USBUART_1_Start(0, USBUART_1_5V_OPERATION);
+    while(!USBUART_1_GetConfiguration());
+    USBUART_1_CDC_Init();
+
+    for(;;)
+    {
+        uint8_t val = Pin_DataIn_Read();  // lee pin del Arduino
+        char c = val ? '1' : '0';         // convierte a texto '0' o '1'
+        
+        if (USBUART_1_CDCIsReady())
+            USBUART_1_PutChar(c);         // envía texto ASCII
+
+        CyDelay(1); // 1 ms de muestreo (1 kHz)
+    }
+}
